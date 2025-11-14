@@ -1,5 +1,5 @@
 #region License
-/* 
+/*
 BSD 3-Clause License
 
 Copyright (c) 2022, Derek Will
@@ -28,7 +28,7 @@ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
 SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #endregion
 
@@ -57,7 +57,7 @@ namespace SocketCANSharp.Network
         /// <summary>
         /// CAN Filters to control the reception of CAN frames.
         /// </summary>
-        public CanFilter[] CanFilters 
+        public CanFilter[] CanFilters
         {
             get
             {
@@ -72,7 +72,7 @@ namespace SocketCANSharp.Network
         /// <summary>
         /// Error Mask to filter which Error Message Frames are passed to the socket receive queue.
         /// </summary>
-        public CanErrorClass ErrorFilters 
+        public CanErrorClass ErrorFilters
         {
             get
             {
@@ -87,7 +87,7 @@ namespace SocketCANSharp.Network
         /// <summary>
         /// Local loopback to receive messages sent from other sockets on this CAN node.
         /// </summary>
-        public bool LocalLoopback 
+        public bool LocalLoopback
         {
             get
             {
@@ -102,7 +102,7 @@ namespace SocketCANSharp.Network
         /// <summary>
         /// Enables a socket to receive the messages that it sent itself.
         /// </summary>
-        public bool ReceiveOwnMessages 
+        public bool ReceiveOwnMessages
         {
             get
             {
@@ -117,7 +117,7 @@ namespace SocketCANSharp.Network
         /// <summary>
         /// Allows the socket to handle CAN FD frames.
         /// </summary>
-        public bool EnableCanFdFrames 
+        public bool EnableCanFdFrames
         {
             get
             {
@@ -132,7 +132,7 @@ namespace SocketCANSharp.Network
         /// <summary>
         /// Allows the socket to handle CAN XL frames.
         /// </summary>
-        public bool EnableCanXlFrames 
+        public bool EnableCanXlFrames
         {
             get
             {
@@ -146,9 +146,9 @@ namespace SocketCANSharp.Network
 
 
         /// <summary>
-        /// If true, then all CAN filters must match (logical AND) for a CAN frame to be placed into the receive queue. If false, then if any CAN filter matches (logical OR) then a CAN frame will be placed into the receive queue. 
+        /// If true, then all CAN filters must match (logical AND) for a CAN frame to be placed into the receive queue. If false, then if any CAN filter matches (logical OR) then a CAN frame will be placed into the receive queue.
         /// </summary>
-        public bool AllCanFiltersMustMatch 
+        public bool AllCanFiltersMustMatch
         {
             get
             {
@@ -173,7 +173,7 @@ namespace SocketCANSharp.Network
             if (SafeHandle.IsInvalid)
                 throw new SocketCanException("Failed to create CAN_RAW socket.");
         }
-        
+
         /// <summary>
         /// Assigns the SocketCAN Base Address Structure to the CAN_RAW socket.
         /// </summary>
@@ -203,7 +203,7 @@ namespace SocketCANSharp.Network
         /// <exception cref="ArgumentNullException">CanNetworkInterface instance is null.</exception>
         public void Bind(CanNetworkInterface iface)
         {
-            if (iface == null) 
+            if (iface == null)
                 throw new ArgumentNullException(nameof(iface));
 
             Bind(new SockAddrCan()
@@ -212,6 +212,27 @@ namespace SocketCANSharp.Network
                 CanIfIndex = iface.Index,
             });
         }
+
+#if NET9_0_OR_GREATER
+        /// <summary>
+        /// Writes the supplied CAN Frame to the socket.
+        /// </summary>
+        /// <param name="canFrame">CAN Frame to transmit onto the CAN network.</param>
+        /// <returns>Number of bytes written to the socket.</returns>
+        /// <exception cref="ObjectDisposedException">The socket has been closed.</exception>
+        /// <exception cref="SocketCanException">Writing to the underlying CAN_RAW socket failed.</exception>
+        public int Write(ref CanFrameFast canFrame)
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().FullName);
+
+            int bytesWritten = LibcNativeMethods.Write(SafeHandle, ref MemoryMarshal.GetReference(canFrame.Buffer), canFrame.Size);
+            if (bytesWritten == -1)
+                throw new SocketCanException("Writing to the underlying CAN_RAW socket failed.");
+
+            return bytesWritten;
+        }
+#endif // NET9_0_OR_GREATER
 
         /// <summary>
         /// Writes the supplied Classical CAN Frame to the socket.
@@ -269,6 +290,27 @@ namespace SocketCANSharp.Network
 
             return bytesWritten;
         }
+
+#if NET9_0_OR_GREATER
+        /// <summary>
+        /// Reads a Classical CAN Frame from the socket.
+        /// </summary>
+        /// <param name="canFrame">Classical CAN Frame to receive from the CAN network.</param>
+        /// <returns>Number of bytes read from the socket.</returns>
+        /// <exception cref="ObjectDisposedException">The socket has been closed.</exception>
+        /// <exception cref="SocketCanException">Reading from the underlying CAN_RAW socket failed.</exception>
+        public int Read(ref CanFrameFast canFrame)
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().FullName);
+
+            int bytesRead = LibcNativeMethods.Read(SafeHandle, ref MemoryMarshal.GetReference(canFrame.Buffer), canFrame.Size);
+            if (bytesRead == -1)
+                throw new SocketCanException("Reading from the underlying CAN_RAW socket failed.");
+
+            return bytesRead;
+        }
+#endif // NET9_0_OR_GREATER
 
         /// <summary>
         /// Reads a Classical CAN Frame from the socket.
@@ -389,7 +431,7 @@ namespace SocketCANSharp.Network
             int len = canFilterArray != null ? Marshal.SizeOf(typeof(CanFilter)) * canFilterArray.Length : 0;
             int result = LibcNativeMethods.SetSockOpt(SafeHandle, SocketLevel.SOL_CAN_RAW, CanSocketOptions.CAN_RAW_FILTER, canFilterArray, len);
             if (result != 0)
-                throw new SocketCanException("Unable to set CAN_RAW_FILTER on CAN_RAW socket.");    
+                throw new SocketCanException("Unable to set CAN_RAW_FILTER on CAN_RAW socket.");
         }
 
         private CanFilter[] GetRawCanFilters()
@@ -430,14 +472,14 @@ namespace SocketCANSharp.Network
             uint err_mask = (uint)errorMask;
             int result = LibcNativeMethods.SetSockOpt(SafeHandle, SocketLevel.SOL_CAN_RAW, CanSocketOptions.CAN_RAW_ERR_FILTER, ref err_mask, Marshal.SizeOf(err_mask));
             if (result != 0)
-                throw new SocketCanException("Unable to set CAN_RAW_ERR_FILTER on CAN_RAW socket."); 
+                throw new SocketCanException("Unable to set CAN_RAW_ERR_FILTER on CAN_RAW socket.");
         }
 
         private CanErrorClass GetRawCanErrorFrameFilters()
         {
             if (_disposed)
                 throw new ObjectDisposedException(GetType().FullName);
-            
+
             uint err_mask = 0;
             int len = Marshal.SizeOf(err_mask);
             int result = LibcNativeMethods.GetSockOpt(SafeHandle, SocketLevel.SOL_CAN_RAW, CanSocketOptions.CAN_RAW_ERR_FILTER, ref err_mask, ref len);
@@ -455,7 +497,7 @@ namespace SocketCANSharp.Network
 
             int loopback = enable ? 1 : 0;
             int result = LibcNativeMethods.SetSockOpt(SafeHandle, SocketLevel.SOL_CAN_RAW, CanSocketOptions.CAN_RAW_LOOPBACK, ref loopback, Marshal.SizeOf(loopback));
-            
+
             if (result != 0)
                 throw new SocketCanException("Unable to set CAN_RAW_LOOPBACK on CAN_RAW socket.");
         }
@@ -482,7 +524,7 @@ namespace SocketCANSharp.Network
 
             int recv_own_msgs = enable ? 1 : 0;
             int result = LibcNativeMethods.SetSockOpt(SafeHandle, SocketLevel.SOL_CAN_RAW, CanSocketOptions.CAN_RAW_RECV_OWN_MSGS, ref recv_own_msgs, Marshal.SizeOf(recv_own_msgs));
-            
+
             if (result != 0)
                 throw new SocketCanException("Unable to set CAN_RAW_RECV_OWN_MSGS on CAN_RAW socket.");
         }
@@ -509,7 +551,7 @@ namespace SocketCANSharp.Network
 
             int can_fd_enabled = enable ? 1 : 0;
             int result = LibcNativeMethods.SetSockOpt(SafeHandle, SocketLevel.SOL_CAN_RAW, CanSocketOptions.CAN_RAW_FD_FRAMES, ref can_fd_enabled, Marshal.SizeOf(can_fd_enabled));
-            
+
             if (result != 0)
                 throw new SocketCanException("Unable to set CAN_RAW_FD_FRAMES on CAN_RAW socket.");
         }
@@ -536,7 +578,7 @@ namespace SocketCANSharp.Network
 
             int can_xl_enabled = enable ? 1 : 0;
             int result = LibcNativeMethods.SetSockOpt(SafeHandle, SocketLevel.SOL_CAN_RAW, CanSocketOptions.CAN_RAW_XL_FRAMES, ref can_xl_enabled, Marshal.SizeOf<int>());
-            
+
             if (result != 0)
                 throw new SocketCanException("Unable to set CAN_RAW_XL_FRAMES on CAN_RAW socket.");
         }
@@ -563,7 +605,7 @@ namespace SocketCANSharp.Network
 
             int join_filter = enable ? 1 : 0;
             int result = LibcNativeMethods.SetSockOpt(SafeHandle, SocketLevel.SOL_CAN_RAW, CanSocketOptions.CAN_RAW_JOIN_FILTERS, ref join_filter, Marshal.SizeOf(join_filter));
-            
+
             if (result != 0)
                 throw new SocketCanException("Unable to set CAN_RAW_JOIN_FILTERS on CAN_RAW socket.");
         }
@@ -600,12 +642,12 @@ namespace SocketCANSharp.Network
 
         private int Read<T>(out T frame, out bool txSuccess, out bool localhost)
         {
-            int ctrlMsgSize = ControlMessageMacros.CMSG_SPACE(Marshal.SizeOf<Timeval>()) + ControlMessageMacros.CMSG_SPACE(Marshal.SizeOf<UInt32>());     
+            int ctrlMsgSize = ControlMessageMacros.CMSG_SPACE(Marshal.SizeOf<Timeval>()) + ControlMessageMacros.CMSG_SPACE(Marshal.SizeOf<UInt32>());
             IntPtr addrPtr = Marshal.AllocHGlobal(Marshal.SizeOf<SockAddrCan>());
             IntPtr iovecPtr = Marshal.AllocHGlobal(Marshal.SizeOf<IoVector>());
             IntPtr framePtr = Marshal.AllocHGlobal(Marshal.SizeOf<T>());
             IntPtr ctrlMsgPtr = Marshal.AllocHGlobal(ctrlMsgSize);
-            
+
             try
             {
                 var iovec = new IoVector() { Base = framePtr, Length = new IntPtr(Marshal.SizeOf<T>()) };

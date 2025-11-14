@@ -1,5 +1,5 @@
 #region License
-/* 
+/*
 BSD 3-Clause License
 
 Copyright (c) 2022, Derek Will
@@ -28,7 +28,7 @@ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
 SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #endregion
 
@@ -269,7 +269,7 @@ namespace SocketCANSharpTest
             {
                 rawCanSocket.ErrorFilters = CanErrorClass.CAN_ERR_ACK | CanErrorClass.CAN_ERR_BUSERROR;
                 CanErrorClass errFilters = rawCanSocket.ErrorFilters;
-                Assert.IsTrue(errFilters.HasFlag(CanErrorClass.CAN_ERR_ACK));  
+                Assert.IsTrue(errFilters.HasFlag(CanErrorClass.CAN_ERR_ACK));
                 Assert.IsTrue(errFilters.HasFlag(CanErrorClass.CAN_ERR_BUSERROR));
                 Assert.IsFalse(errFilters.HasFlag(CanErrorClass.CAN_ERR_BUSOFF));
                 Assert.IsFalse(errFilters.HasFlag(CanErrorClass.CAN_ERR_CRTL));
@@ -319,7 +319,7 @@ namespace SocketCANSharpTest
                 rawCanSocket.Bind(iface);
                 rawCanSocket.ErrorFilters = CanErrorClass.CAN_ERR_ACK | CanErrorClass.CAN_ERR_BUSERROR;
                 CanErrorClass errFilters = rawCanSocket.ErrorFilters;
-                Assert.IsTrue(errFilters.HasFlag(CanErrorClass.CAN_ERR_ACK));  
+                Assert.IsTrue(errFilters.HasFlag(CanErrorClass.CAN_ERR_ACK));
                 Assert.IsTrue(errFilters.HasFlag(CanErrorClass.CAN_ERR_BUSERROR));
                 Assert.IsFalse(errFilters.HasFlag(CanErrorClass.CAN_ERR_BUSOFF));
                 Assert.IsFalse(errFilters.HasFlag(CanErrorClass.CAN_ERR_CRTL));
@@ -1143,6 +1143,65 @@ namespace SocketCANSharpTest
                 Assert.IsTrue(data.SequenceEqual(frame2.Data.Take(frame2.Length)));
                 Assert.AreEqual(false, txSuccess2);
                 Assert.AreEqual(true, localhost2);
+            }
+        }
+
+        [Test]
+        public void RawCanSocket_Read_CanFrameFast_Success_Test()
+        {
+            IEnumerable<CanNetworkInterface> collection = CanNetworkInterface.GetAllInterfaces(true);
+            Assert.IsNotNull(collection);
+            Assert.GreaterOrEqual(collection.Count(), 1);
+
+            var iface = collection.FirstOrDefault(i =>  i.Name.Equals("vcan0"));
+            Assert.IsNotNull(iface);
+
+            using (var senderSocket = new RawCanSocket())
+            using (var receiverSocket = new RawCanSocket())
+            {
+                senderSocket.Bind(iface);
+                receiverSocket.Bind(iface);
+
+                byte[] data = [ 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef ];
+                Span<byte> write = stackalloc byte[16];
+                CanFrameFast writeFrame = new CanFrameFast(ref write);
+                writeFrame.CanId = 0x123;
+                writeFrame.Length = (byte)data.Length;
+                data.CopyTo(writeFrame.Data);
+                int bytesWritten = senderSocket.Write(ref writeFrame);
+                Assert.AreEqual(16, bytesWritten);
+
+                Span<byte> read = stackalloc byte[16];
+                CanFrameFast readFrame = new CanFrameFast(ref read);
+                int bytesRead = receiverSocket.Read(ref readFrame);
+                Assert.AreEqual(16, bytesRead);
+                Assert.AreEqual(0x123, readFrame.CanId);
+                Assert.IsTrue(readFrame.Data.ToArray().Take(readFrame.Length).SequenceEqual(new byte[] { 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef }));
+            }
+        }
+
+        [Test]
+        public void RawCanSocket_Write_CanFrameFast_Success_Test()
+        {
+            IEnumerable<CanNetworkInterface> collection = CanNetworkInterface.GetAllInterfaces(true);
+            Assert.IsNotNull(collection);
+            Assert.GreaterOrEqual(collection.Count(), 1);
+
+            var iface = collection.FirstOrDefault(i =>  i.Name.Equals("vcan0"));
+            Assert.IsNotNull(iface);
+
+            using (var rawCanSocket = new RawCanSocket())
+            {
+                rawCanSocket.Bind(iface);
+
+                byte[] data = [ 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef ];
+                Span<byte> write = stackalloc byte[16];
+                CanFrameFast writeFrame = new CanFrameFast(ref write);
+                writeFrame.CanId = 0x123;
+                writeFrame.Length = (byte)data.Length;
+                data.CopyTo(writeFrame.Data);
+                int bytesWritten = rawCanSocket.Write(ref writeFrame);
+                Assert.AreEqual(16, bytesWritten);
             }
         }
     }

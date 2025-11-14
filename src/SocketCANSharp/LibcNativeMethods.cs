@@ -1,5 +1,5 @@
 #region License
-/* 
+/*
 BSD 3-Clause License
 
 Copyright (c) 2021, Derek Will
@@ -28,7 +28,7 @@ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
 SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #endregion
 
@@ -89,7 +89,7 @@ namespace SocketCANSharp
         public static extern int Ioctl(SafeFileDescriptorHandle socketHandle, int request, [In][Out] IfreqMtu ifreq);
 
         /// <summary>
-        /// Used to obtain a timeval struct with the receive timestamp of the last packet passed to the user. 
+        /// Used to obtain a timeval struct with the receive timestamp of the last packet passed to the user.
         /// </summary>
         /// <param name="socketHandle">Socket Handle Wrapper Instance</param>
         /// <param name="request">Request Code</param>
@@ -147,7 +147,19 @@ namespace SocketCANSharp
         /// <returns>0 on success, -1 on error</returns>
         [DllImport("libc", EntryPoint="connect", SetLastError=true)]
         public static extern int Connect(SafeFileDescriptorHandle socketHandle, SockAddrCanJ1939 addr, int addrSize);
- 
+
+#if NET9_0_OR_GREATER
+        /// <summary>
+        /// Write the contents of a byte buffer to the socket.
+        /// </summary>
+        /// <param name="socketHandle">Socket Handle Wrappper Instance</param>
+        /// <param name="frame">Reference to a buffer to write</param>
+        /// <param name="frameSize">Size of the buffer in bytes</param>
+        /// <returns>The number of bytes written on success, -1 on error</returns>
+        [DllImport("libc", EntryPoint = "write", SetLastError = true)]
+        public static extern int Write(SafeFileDescriptorHandle socketHandle, ref byte frame, int frameSize);
+#endif // NET9_0_OR_GREATER
+
         /// <summary>
         /// Write the CanFrame to the socket.
         /// </summary>
@@ -288,6 +300,18 @@ namespace SocketCANSharp
         [DllImport("libc", EntryPoint="write", SetLastError=true)]
         public static extern int Write(SafeFileDescriptorHandle socketHandle, byte[] data, int dataSize);
 
+#if NET9_0_OR_GREATER
+        /// <summary>
+        /// Read into a byte buffer from the socket.
+        /// </summary>
+        /// <param name="socketHandle">Socket Handle Wrapper Instance</param>
+        /// <param name="frame">A reference to a byte buffer to populate</param>
+        /// <param name="frameSize">Size of byte buffer</param>
+        /// <returns>The number of bytes read on success, -1 on error</returns>
+        [DllImport("libc", EntryPoint = "read", SetLastError = true)]
+        public static extern int Read(SafeFileDescriptorHandle socketHandle, ref byte frame, int frameSize);
+#endif // NET9_0_OR_GREATER
+
         /// <summary>
         /// Read a CanFrame from the socket.
         /// </summary>
@@ -337,7 +361,7 @@ namespace SocketCANSharp
         /// <returns>The number of bytes read on success, -1 on error</returns>
         [DllImport("libc", EntryPoint="read", SetLastError=true)]
         public static extern int Read(SafeFileDescriptorHandle socketHandle, [Out] BcmGenericMessage message, int msgSize);
-        
+
         /// <summary>
         /// Read a BcmGenericMessage from the socket. Variant for 32-bit.
         /// </summary>
@@ -715,7 +739,7 @@ namespace SocketCANSharp
         /// <returns>0 or 1 on success depending on option name and value, -1 on error</returns>
         [DllImport("libc", EntryPoint="setsockopt", SetLastError=true)]
         public static extern int SetSockOpt(SafeFileDescriptorHandle socketHandle, SocketLevel socketLevel, J1939SocketOptions optionName, ref int optionValue, int optionValueSize);
-        
+
         /// <summary>
         /// Get the socket option specified by the option name and socket level to the provided option value for the supplied socket.
         /// </summary>
@@ -751,7 +775,7 @@ namespace SocketCANSharp
         /// <returns>0 on success, -1 on error</returns>
         [DllImport("libc", EntryPoint="getsockopt", SetLastError=true)]
         public static extern int GetSockOpt(SafeFileDescriptorHandle socketHandle, SocketLevel socketLevel, J1939SocketOptions optionName, [In, Out] J1939Filter[] filters, ref int optionValueSize);
-        
+
         /// <summary>
         /// Set the socket option specified by the option name and socket level to the provided option value for the supplied socket.
         /// </summary>
@@ -775,7 +799,7 @@ namespace SocketCANSharp
         /// <returns>0 on success, -1 on error</returns>
         [DllImport("libc", EntryPoint = "getsockopt", SetLastError = true)]
         public static extern int GetSockOpt(SafeFileDescriptorHandle socketHandle, SocketLevel socketLevel, int optionName, IntPtr optionValue, ref int optionValueSize);
-        
+
         /// <summary>
         /// Set the socket option specified by the option name and socket level to the provided option value for the supplied socket.
         /// </summary>
@@ -817,12 +841,12 @@ namespace SocketCANSharp
         /// <summary>
         /// Opens an epoll file descriptor.
         /// </summary>
-        /// <param name="size">The size argument is ignored since Linux 2.6.8, but must be greater than zero for backwards compatibility. 
+        /// <param name="size">The size argument is ignored since Linux 2.6.8, but must be greater than zero for backwards compatibility.
         /// Originally, this argument was intended as a hint to the kernel as to the number of file descriptors that the caller expected to add to the epoll instance.</param>
         /// <returns>On success, returns a valid file descriptor handle. On failure, returns an invalid file descriptor handle.</returns>
         [DllImport("libc", EntryPoint="epoll_create", SetLastError=true)]
         public static extern SafeFileDescriptorHandle EpollCreate(int size);
-        
+
         /// <summary>
         /// Control interface used to add, modify, and delete entries from the interest list of an epoll file descriptor.
         /// </summary>
@@ -833,7 +857,7 @@ namespace SocketCANSharp
         /// <returns>0 on success, -1 on error</returns>
         [DllImport("libc", EntryPoint="epoll_ctl", SetLastError=true)]
         public static extern int EpollControl(SafeFileDescriptorHandle epfd, EpollOperation op, SafeFileDescriptorHandle fd, ref EpollEvent evnt);
-        
+
         /// <summary>
         /// Waits for an I/O event on an epoll file descriptor.
         /// </summary>
@@ -902,7 +926,7 @@ namespace SocketCANSharp
         /// <returns>The number of bytes received on success, -1 on error</returns>
         [DllImport("libc", EntryPoint="recvmsg", SetLastError=true)]
         public static extern int RecvMsg(SafeFileDescriptorHandle socketHandle, ref MessageHeader canMessage, MessageFlags flags);
-        
+
         /// <summary>
         /// Retrieves the index of the network interface corresponding to the specified name.
         /// </summary>
