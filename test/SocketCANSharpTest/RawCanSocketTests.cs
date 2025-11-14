@@ -39,6 +39,7 @@ using SocketCANSharp.Network;
 using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 
 namespace SocketCANSharpTest
 {
@@ -1202,6 +1203,73 @@ namespace SocketCANSharpTest
                 data.CopyTo(writeFrame.Data);
                 int bytesWritten = rawCanSocket.Write(ref writeFrame);
                 Assert.AreEqual(16, bytesWritten);
+            }
+        }
+
+        [Test]
+        public void RawCanSocket_Write_CanFrameFast_Fd_Success_Test()
+        {
+            IEnumerable<CanNetworkInterface> collection = CanNetworkInterface.GetAllInterfaces(true);
+            Assert.IsNotNull(collection);
+            Assert.GreaterOrEqual(collection.Count(), 1);
+
+            var iface = collection.FirstOrDefault(i =>  i.Name.Equals("vcan0"));
+            Assert.IsNotNull(iface);
+
+            using (var rawCanSocket = new RawCanSocket())
+            {
+                Assume.That(iface.MaximumTransmissionUnit, Is.GreaterThanOrEqualTo(SocketCanConstants.CANFD_MTU));
+                rawCanSocket.EnableCanFdFrames = true;
+                rawCanSocket.Bind(iface);
+
+                byte[] data = [ 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef ];
+                Span<byte> write = stackalloc byte[72];
+                CanFrameFast writeFrame = new CanFrameFast(ref write);
+                writeFrame.CanId = 0x123;
+                writeFrame.Length = (byte)data.Length;
+                writeFrame.Flags = CanFdFlags.CANFD_BRS;
+                data.CopyTo(writeFrame.Data);
+                int bytesWritten = rawCanSocket.Write(ref writeFrame);
+                Assert.AreEqual(72, bytesWritten);
+            }
+        }
+
+        [Test]
+        public void RawCanSocket_Read_CanFrameFast_Fd_Success_Test()
+        {
+            IEnumerable<CanNetworkInterface> collection = CanNetworkInterface.GetAllInterfaces(true);
+            Assert.IsNotNull(collection);
+            Assert.GreaterOrEqual(collection.Count(), 1);
+
+            var iface = collection.FirstOrDefault(i =>  i.Name.Equals("vcan0"));
+            Assert.IsNotNull(iface);
+
+            using (var senderSocket = new RawCanSocket())
+            using (var receiverSocket = new RawCanSocket())
+            {
+                Assume.That(iface.MaximumTransmissionUnit, Is.GreaterThanOrEqualTo(SocketCanConstants.CANFD_MTU));
+                senderSocket.EnableCanFdFrames = true;
+                receiverSocket.EnableCanFdFrames = true;
+                senderSocket.Bind(iface);
+                receiverSocket.Bind(iface);
+
+                byte[] data = [ 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef ];
+                Span<byte> write = stackalloc byte[72];
+                CanFrameFast writeFrame = new CanFrameFast(ref write);
+                writeFrame.CanId = 0x123;
+                writeFrame.Length = (byte)data.Length;
+                writeFrame.Flags = CanFdFlags.CANFD_BRS;
+                data.CopyTo(writeFrame.Data);
+                int bytesWritten = senderSocket.Write(ref writeFrame);
+                Assert.AreEqual(72, bytesWritten);
+
+                Span<byte> read = stackalloc byte[72];
+                CanFrameFast readFrame = new CanFrameFast(ref read);
+                int bytesRead = receiverSocket.Read(ref readFrame);
+                Assert.AreEqual(72, bytesRead);
+                Assert.AreEqual(0x123, readFrame.CanId);
+                Assert.IsTrue(readFrame.Data.ToArray().Take(readFrame.Length).SequenceEqual(new byte[] { 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef }));
+                Assert.IsTrue(readFrame.Flags.HasFlag(CanFdFlags.CANFD_BRS)); // In Kernel 6.1 and higher - CANFD_FDF flag will also be set. Changing to just check for BRS to be backwards compatible.
             }
         }
     }
