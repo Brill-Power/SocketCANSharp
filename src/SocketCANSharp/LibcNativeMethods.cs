@@ -157,7 +157,7 @@ namespace SocketCANSharp
         /// <param name="frameSize">Size of the buffer in bytes</param>
         /// <returns>The number of bytes written on success, -1 on error</returns>
         [DllImport("libc", EntryPoint = "write", SetLastError = true)]
-        public static extern int Write(SafeFileDescriptorHandle socketHandle, ref byte frame, int frameSize);
+        internal static extern int Write(SafeFileDescriptorHandle socketHandle, ref byte frame, int frameSize);
 #endif // NET9_0_OR_GREATER
 
         /// <summary>
@@ -309,7 +309,7 @@ namespace SocketCANSharp
         /// <param name="frameSize">Size of byte buffer</param>
         /// <returns>The number of bytes read on success, -1 on error</returns>
         [DllImport("libc", EntryPoint = "read", SetLastError = true)]
-        public static extern int Read(SafeFileDescriptorHandle socketHandle, ref byte frame, int frameSize);
+        internal static extern int Read(SafeFileDescriptorHandle socketHandle, ref byte frame, int frameSize);
 #endif // NET9_0_OR_GREATER
 
         /// <summary>
