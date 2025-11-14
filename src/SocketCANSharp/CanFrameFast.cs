@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #endregion
 
-#if NET9_0_OR_GREATER
+#if NET8_0_OR_GREATER
 using System;
 using System.Runtime.InteropServices;
 
@@ -105,4 +105,4 @@ namespace SocketCANSharp
         internal Span<byte> Buffer => _buffer;
     }
 }
-#endif // NET9_0_OR_GREATER
+#endif // NET8_0_OR_GREATER

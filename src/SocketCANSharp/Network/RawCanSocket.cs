@@ -213,7 +213,7 @@ namespace SocketCANSharp.Network
             });
         }
 
-#if NET9_0_OR_GREATER
+#if NET8_0_OR_GREATER
         /// <summary>
         /// Writes the supplied CAN Frame to the socket.
         /// </summary>
@@ -232,7 +232,7 @@ namespace SocketCANSharp.Network
 
             return bytesWritten;
         }
-#endif // NET9_0_OR_GREATER
+#endif // NET8_0_OR_GREATER
 
         /// <summary>
         /// Writes the supplied Classical CAN Frame to the socket.
@@ -291,7 +291,7 @@ namespace SocketCANSharp.Network
             return bytesWritten;
         }
 
-#if NET9_0_OR_GREATER
+#if NET8_0_OR_GREATER
         /// <summary>
         /// Reads a Classical CAN Frame from the socket.
         /// </summary>
@@ -310,7 +310,7 @@ namespace SocketCANSharp.Network
 
             return bytesRead;
         }
-#endif // NET9_0_OR_GREATER
+#endif // NET8_0_OR_GREATER
 
         /// <summary>
         /// Reads a Classical CAN Frame from the socket.

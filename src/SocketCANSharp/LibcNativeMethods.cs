@@ -148,7 +148,7 @@ namespace SocketCANSharp
         [DllImport("libc", EntryPoint="connect", SetLastError=true)]
         public static extern int Connect(SafeFileDescriptorHandle socketHandle, SockAddrCanJ1939 addr, int addrSize);
 
-#if NET9_0_OR_GREATER
+#if NET8_0_OR_GREATER
         /// <summary>
         /// Write the contents of a byte buffer to the socket.
         /// </summary>
@@ -158,7 +158,7 @@ namespace SocketCANSharp
         /// <returns>The number of bytes written on success, -1 on error</returns>
         [DllImport("libc", EntryPoint = "write", SetLastError = true)]
         internal static extern int Write(SafeFileDescriptorHandle socketHandle, ref byte frame, int frameSize);
-#endif // NET9_0_OR_GREATER
+#endif // NET8_0_OR_GREATER
 
         /// <summary>
         /// Write the CanFrame to the socket.
@@ -300,7 +300,7 @@ namespace SocketCANSharp
         [DllImport("libc", EntryPoint="write", SetLastError=true)]
         public static extern int Write(SafeFileDescriptorHandle socketHandle, byte[] data, int dataSize);
 
-#if NET9_0_OR_GREATER
+#if NET8_0_OR_GREATER
         /// <summary>
         /// Read into a byte buffer from the socket.
         /// </summary>
@@ -310,7 +310,7 @@ namespace SocketCANSharp
         /// <returns>The number of bytes read on success, -1 on error</returns>
         [DllImport("libc", EntryPoint = "read", SetLastError = true)]
         internal static extern int Read(SafeFileDescriptorHandle socketHandle, ref byte frame, int frameSize);
-#endif // NET9_0_OR_GREATER
+#endif // NET8_0_OR_GREATER
 
         /// <summary>
         /// Read a CanFrame from the socket.
